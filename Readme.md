@@ -1,10 +1,10 @@
 ## Hello I'm Prashant Sonar submitting this repo as per my best knowledge to be get considerable for the practical assingment Please follow the below steps to setup this project
 
 ## clone the project using
-git clone 
+git clone https://github.com/Prashant-koliinfotech/prashant--task.git
 
 ## Create the .env using 
-copy .env.example and rename with .env
+copy .env-example and rename with .env
 
 ## Create the virtaulenv using 
 virtualenv env

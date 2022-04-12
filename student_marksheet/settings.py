@@ -26,8 +26,7 @@ SECRET_KEY = os.environ['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ['DEBUG']
-
-ALLOWED_HOSTS = os.environ['ALLOWED_HOSTS']
+ALLOWED_HOSTS = os.environ['ALLOWED_HOSTS'].split(',')
 
 
 # Application definition
@@ -40,7 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'src'
+    'rest_framework_swagger',
+    'src',
+    'drf_yasg',
 
 ]
 
@@ -137,4 +138,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 2,
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.coreapi.AutoSchema',
+    'DEFAULT_MODEL_SERIALIZER_CLASS': (
+        'rest_framework.serializers.ModelSerializer',
+    ),
+}
+
+SWAGGER_SETTINGS = {
+    'SHOW_REQUEST_HEADERS': True,
+    'SUPPORTED_SUBMIT_METHODS': [
+        'get',
+        'post',
+        'put',
+    ],
+    'JSON_EDITOR': True,    
+    'SECURITY_DEFINITIONS': None   
 }

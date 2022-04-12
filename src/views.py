@@ -1,42 +1,40 @@
-from functools import partial
-from multiprocessing import context
-from os import stat
-from tokenize import Triple
-from wsgiref.simple_server import ServerHandler
-from xml.etree.ElementTree import SubElement
-from django.shortcuts import render
-from django.http import Http404
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions
 from src.models import Subject, Student
 from src.serializers import (StudentSerializer,
     SubjectSerializer, StudentMarksDetailsSerializer, AverageMarksSerializer)
 from collections import defaultdict
+from rest_framework.generics  import GenericAPIView, ListAPIView
 
-class StudentListAPIView(APIView):
+class StudentListAPIView(GenericAPIView):
     """
     Student list Api to add student and get all students with total marks data.
     """
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
-
-    def get_queryset(self) :
+    permission_classes = (permissions.AllowAny,)
+    def get_queryset(self):
         return self.queryset.order_by('-id')
 
     def get(self, request, format=None):
+        """
+        Get students with thier total marks
+        """
         queryset = self.get_queryset()
         serializer = StudentSerializer(queryset, many=True)
         return Response({"data": serializer.data}, status=status.HTTP_200_OK)
 
     def post(self, request):
+        """
+        Add new students
+        """
         serializer = StudentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Student details added successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response({"error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-class StudentDetailsAPIView(APIView):
+class StudentDetailsAPIView(GenericAPIView):
     """
     Student Details Api to get student with its marks details
     and update student data.
@@ -56,13 +54,13 @@ class StudentDetailsAPIView(APIView):
 
     def put(self, request, pk, format=None):
         instance = self.get_queryset(pk)
-        serializer = StudentSerializer(instance, data=request.data, partial=True)
+        serializer =  self.serializer_class(instance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Student details updated successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
         return Response({"error":serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-class SubjectAPIView(APIView):
+class SubjectAPIView(GenericAPIView):
     """
     Subject  Api to add student with its marks details.
     """
@@ -74,14 +72,14 @@ class SubjectAPIView(APIView):
 
     def get(self, request, format=None):
         queryset = self.get_queryset()
-        serializer = StudentSerializer(queryset, many=True)
+        serializer =  self.serializer_class(queryset, many=True)
         return Response({"data": serializer.data}, status=status.HTTP_200_OK)
 
     def post(self, request):
         student_obj = Student.objects.filter(pk=int(request.data['student'])).first()
 
         if student_obj:
-            serializer = SubjectSerializer(data=request.data)
+            serializer = self.serializer_class(data=request.data)
             if serializer.is_valid():
                 serializer.save(student=student_obj)
                 return Response({"message": "Student marks added successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
@@ -89,7 +87,7 @@ class SubjectAPIView(APIView):
         else:
             return Response({"message":"Please provide valid student id!"}, status=status.HTTP_400_BAD_REQUEST)
 
-class AverageMarksAPIView(APIView):
+class AverageMarksAPIView(ListAPIView):
     """
     Average Marks Api to get average marks for all the students.
     """
@@ -101,11 +99,11 @@ class AverageMarksAPIView(APIView):
 
     def get(self, request, format=None):
         queryset = self.get_queryset()
-        serializer = AverageMarksSerializer(queryset, many=True)
+        serializer = self.serializer_class(queryset, many=True)
         subject_names = []
         for data in queryset:
-            if data.subject_name not in subject_names:
-                subject_names.append(data.subject_name)
+            if data.subject_name.lower() not in subject_names:
+                subject_names.append(data.subject_name.lower())
         
         subjects = defaultdict(list)
         for sub_data in serializer.data:
